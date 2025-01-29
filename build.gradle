@@ -1,5 +1,6 @@
 plugins {
     alias libs.plugins.fabric.loom
+    alias libs.plugins.shadow
     id "maven-publish"
 }
 
@@ -22,7 +23,7 @@ loom {
         }
     }
     mixin {
-        useLegacyMixinAp = false
+        useLegacyMixinAp = true
     }
 }
 
@@ -31,6 +32,10 @@ dependencies {
     mappings variantOf(libs.yarn.mappings) { classifier "v2" }
     modImplementation libs.fabric.loader
     vineflowerDecompilerClasspath libs.vineflower
+    shadow("com.mojang:text2speech:1.18.10") {
+        transitive = false
+    }
+    include("org.slf4j:slf4j-api:2.0.16")
 }
 
 processResources {
@@ -47,6 +52,20 @@ tasks.withType(JavaCompile).configureEach {
 java {
     sourceCompatibility = targetCompatibility = JavaVersion.VERSION_1_8
     withSourcesJar()
+}
+
+tasks {
+    shadowJar {
+        configurations = [project.configurations.shadow]
+        outputs.upToDateWhen { false }
+        enableRelocation = true
+        relocationPrefix = "dev.tildejustin.narrator_backport.shaded"
+    }
+
+    remapJar {
+        dependsOn(shadowJar)
+        inputFile = file(shadowJar.archivePath)
+    }
 }
 
 jar {
